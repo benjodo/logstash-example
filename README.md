@@ -89,7 +89,6 @@ curl -u ingest:secret -sS -X POST http://localhost:8080 \
 - Secrets avoidance: sensitive values (e.g., `DATADOG_API_KEY`, Basic Auth creds) are referenced via environment variable substitution in the Logstash config, so they are not written in cleartext to disk.
 - Exposure: prefer internal-only ingress on Aptible; restrict sources at the platform layer. TLS termination should be upstream.
 - Input hardening: request body capped by `LOGSTASH_HTTP_MAX_CONTENT_LENGTH` (default 5 MiB). Adjust based on expected log size.
-- Privileges: container runs as `root` to bind port 80. For stricter hardening, grant `cap_net_bind_service` to the Java binary and run as the non-root `logstash` user instead, or bind to a high port and map externally.
 - Verbosity: set `LOGSTASH_LOG_LEVEL` to `warn`/`error` in production; keep `LOGSTASH_ENABLE_STDOUT=false` to avoid duplicating logs.
 
 
