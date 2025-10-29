@@ -7,10 +7,12 @@ set -euo pipefail
 : "${DD_ENV:=production}"
 : "${DD_TAGS:=}"
 : "${LOGSTASH_HTTP_HOST:=0.0.0.0}"
-: "${LOGSTASH_HTTP_PORT:=80}"
+: "${LOGSTASH_HTTP_PORT:=8080}"
 : "${LOGSTASH_HTTP_THREADS:=4}"
 : "${QUEUE_TYPE:=memory}"
 : "${LOGSTASH_LOG_LEVEL:=warn}"
+: "${LOGSTASH_HTTP_MAX_CONTENT_LENGTH:=5242880}"
+: "${LOGSTASH_ENABLE_STDOUT:=false}"
 
 if [[ -z "${DATADOG_API_KEY:-}" ]]; then
   echo "DATADOG_API_KEY is required" >&2
@@ -33,6 +35,7 @@ input {
     ssl => false
     codec => json
     threads => ${LOGSTASH_HTTP_THREADS}
+    max_content_length => ${LOGSTASH_HTTP_MAX_CONTENT_LENGTH}
 EOF
 
 if [[ -n "${INPUT_BASIC_AUTH_USER:-}" && -n "${INPUT_BASIC_AUTH_PASS:-}" ]]; then
@@ -48,16 +51,16 @@ cat >> "$PIPELINE_FILE" <<EOF
 filter {
   mutate {
     add_field => {
-      "ddsource" => "${DD_SOURCE}"
-      "service"  => "${DD_SERVICE}"
-      "env"      => "${DD_ENV}"
+      "ddsource" => "\${DD_SOURCE}"
+      "service"  => "\${DD_SERVICE}"
+      "env"      => "\${DD_ENV}"
     }
   }
 EOF
 
 if [[ -n "${DD_TAGS}" ]]; then
   cat >> "$PIPELINE_FILE" <<EOF
-  mutate { add_field => { "ddtags" => "${DD_TAGS}" } }
+  mutate { add_field => { "ddtags" => "\${DD_TAGS}" } }
 EOF
 fi
 
@@ -70,17 +73,21 @@ output {
     format => "json"
     content_type => "application/json"
     headers => {
-      "DD-API-KEY" => "${DATADOG_API_KEY}"
-      "DD-Source"  => "${DD_SOURCE}"
-      "DD-Service" => "${DD_SERVICE}"
-      "DD-Env"     => "${DD_ENV}"
+      "DD-API-KEY" => "\${DATADOG_API_KEY}"
+      "DD-Source"  => "\${DD_SOURCE}"
+      "DD-Service" => "\${DD_SERVICE}"
+      "DD-Env"     => "\${DD_ENV}"
     }
     retry_failed => true
     automatic_retries => 5
   }
-  stdout { codec => rubydebug }
-}
 EOF
+
+if [[ "${LOGSTASH_ENABLE_STDOUT,,}" == "true" ]]; then
+  echo '  stdout { codec => rubydebug }' >> "$PIPELINE_FILE"
+fi
+
+echo '}' >> "$PIPELINE_FILE"
 
 # Optional logstash.yml tuning
 cat > "$CONFIG_DIR/logstash.yml" <<YML

@@ -6,10 +6,9 @@ RUN logstash-plugin install logstash-input-http logstash-output-http logstash-fi
 # Copy entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-EXPOSE 80
+EXPOSE 8080
 
-# Run as root to bind to privileged port 80
-USER root
+USER logstash
 
 ENTRYPOINT ["bash", "/usr/local/bin/entrypoint.sh"]
 
