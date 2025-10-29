@@ -19,6 +19,9 @@ if [[ -z "${DATADOG_API_KEY:-}" ]]; then
   exit 1
 fi
 
+# Ensure Logstash sees defaults via environment for ${VAR} substitution
+export DATADOG_SITE DD_SOURCE DD_SERVICE DD_ENV DD_TAGS
+
 PIPELINE_DIR="/usr/share/logstash/pipeline"
 CONFIG_DIR="/usr/share/logstash/config"
 
@@ -51,9 +54,9 @@ cat >> "$PIPELINE_FILE" <<EOF
 filter {
   mutate {
     add_field => {
-      "ddsource" => "\${DD_SOURCE}"
-      "service"  => "\${DD_SERVICE}"
-      "env"      => "\${DD_ENV}"
+      "ddsource" => "\${DD_SOURCE:logstash}"
+      "service"  => "\${DD_SERVICE:log-ingest}"
+      "env"      => "\${DD_ENV:production}"
     }
   }
 EOF
@@ -74,9 +77,9 @@ output {
     content_type => "application/json"
     headers => {
       "DD-API-KEY" => "\${DATADOG_API_KEY}"
-      "DD-Source"  => "\${DD_SOURCE}"
-      "DD-Service" => "\${DD_SERVICE}"
-      "DD-Env"     => "\${DD_ENV}"
+      "DD-Source"  => "\${DD_SOURCE:logstash}"
+      "DD-Service" => "\${DD_SERVICE:log-ingest}"
+      "DD-Env"     => "\${DD_ENV:production}"
     }
     retry_failed => true
     automatic_retries => 5
