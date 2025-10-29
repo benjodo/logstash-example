@@ -10,6 +10,7 @@ set -euo pipefail
 : "${LOGSTASH_HTTP_PORT:=80}"
 : "${LOGSTASH_HTTP_THREADS:=4}"
 : "${QUEUE_TYPE:=memory}"
+: "${LOGSTASH_LOG_LEVEL:=warn}"
 
 if [[ -z "${DATADOG_API_KEY:-}" ]]; then
   echo "DATADOG_API_KEY is required" >&2
@@ -89,6 +90,7 @@ YML
 ARGS=("-f" "$PIPELINE_FILE")
 if [[ -n "${PIPELINE_WORKERS:-}" ]]; then ARGS+=("-w" "${PIPELINE_WORKERS}"); fi
 if [[ -n "${PIPELINE_BATCH_SIZE:-}" ]]; then ARGS+=("-b" "${PIPELINE_BATCH_SIZE}"); fi
+if [[ -n "${LOGSTASH_LOG_LEVEL:-}" ]]; then ARGS+=("--log.level" "${LOGSTASH_LOG_LEVEL}"); fi
 
 exec /usr/local/bin/docker-entrypoint "${ARGS[@]}"
 

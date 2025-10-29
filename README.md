@@ -30,7 +30,7 @@ curl -sS -X POST http://localhost:80 \
   -d '{"message":"hello","level":"info","app":"example"}'
 ```
 
-Enable Basic Auth on the ingestion endpoint:
+Optional (non-Aptible drains) Basic Auth on the ingestion endpoint:
 
 ```bash
 docker run --rm -p 80:80 \
@@ -57,6 +57,7 @@ curl -u ingest:secret -sS -X POST http://localhost:80 \
 - **LOGSTASH_HTTP_PORT**: HTTP input port. Default `80`.
 - **LOGSTASH_HTTP_THREADS**: HTTP input worker threads. Default `4`.
 - **INPUT_BASIC_AUTH_USER** / **INPUT_BASIC_AUTH_PASS**: If both provided, Basic Auth is enabled on the HTTP input.
+- **LOGSTASH_LOG_LEVEL**: Logstash internal log level (`fatal|error|warn|info|debug|trace`). Default `warn`.
 - **PIPELINE_WORKERS**: Optional Logstash pipeline workers (`-w`).
 - **PIPELINE_BATCH_SIZE**: Optional Logstash pipeline batch size (`-b`).
 - **QUEUE_TYPE**: Logstash queue type (`memory` or `persisted`). Default `memory`.
@@ -71,13 +72,10 @@ curl -u ingest:secret -sS -X POST http://localhost:80 \
 
 ### Aptible notes
 
+- Prefer an internal-only endpoint for the Logstash service (not internet-exposed). Aptible log drains do not support Basic Auth.
 - Expose container port `80`. Aptible will terminate TLS upstream and forward plaintext HTTP to the container.
 - Configure environment variables on the app (at minimum, `DATADOG_API_KEY`).
-- If you need auth on the ingest endpoint, set `INPUT_BASIC_AUTH_USER` and `INPUT_BASIC_AUTH_PASS`.
-
-### Security
-
-- The image runs as root by default to bind to privileged port 80. If you prefer non-root, you can grant `cap_net_bind_service` to the Java binary at build time or switch to a higher, non-privileged port.
+- Tune verbosity with `LOGSTASH_LOG_LEVEL` (defaults to `warn`).
 
 ### File overview
 
